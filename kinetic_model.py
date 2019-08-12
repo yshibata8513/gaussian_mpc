@@ -1,9 +1,32 @@
 import torch
+import torch.nn as nn
 
 
 WB = 2.5  # [m]
 NX = 4  # x = x, y, v, yaw
 NU = 2  # a = [accel, steer]
+
+class vehicle_model:
+    def __init__(self,WB,noise=False):
+        super(vehicle_model,self).__init__()
+        self.WB = WB
+        self.noise=noise
+    def forward(self,state,control):
+        x,y,yaw,v,delta,a = state
+        da,d_delta,dt = control
+        x_ = x + v*torch.cos(yaw)*dt
+        y_ = y + v*torch.sin(yaw)*dt
+        yaw_ = yaw + v/self.WB*torch.tan(delta)*dt
+        v_ = v + a*dt
+        delta_ = delta + d_delta*dt
+        a_ = a + da*dt
+    
+        state_ = torch.cat( [x_.view(1),y_.view(1),yaw_.view(1),v_.view(1),delta_.view(1),a_.view(1)] ,dim=0)
+    
+        return state_
+
+    
+
 
 def model(state,control):
     x,y,yaw,v,delta,a = state

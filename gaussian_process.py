@@ -2,6 +2,17 @@ import torch
 
 sigma = torch.Tensor([0.2])
 
+noise = 0.1
+
+class GP_test:
+    def __init__(self,dim):
+        self.dim = dim
+    
+    def forward(self,state,control):
+        myu = torch.zeros(self.dim)
+        sigma = torch.eye(self.dim)*noise
+    return myu,sigma
+
 def RBF_kernel(x,x_,dim):
     x = x.view(-1,1,dim)
     x_ = x_.view(1,-1,dim)

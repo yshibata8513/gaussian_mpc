@@ -1,6 +1,6 @@
 import torch
 
-def error_deviation_parallel(states,waypoints,indices,ql,qc):
+def error_deviation_parallel(states,waypoints,indices,ql=1.,qc=1.):
     x,y = states[:,0],states[:,1]
     cx,cy,gx,gy = waypoints[indices,0],waypoints[indices,1],waypoints[indices,2],waypoints[indices,3]
     el = -gx*(x-cx) - gy*(y-cy)
@@ -26,14 +26,15 @@ def error_velocity(inds,ds,horizon_length):
 L = 100
 
 def search_(state,waypoints,_indx):
-    x,y,_,_,_,_,_,_ = state
-    cx,cy,_,_ = waypoints
+    x,y = state[0],state[1]
+    cx,cy= waypoints[:,0],waypoints[:,1]
+    print(x.size(),cx.size(),y.size(),cy.size())
     dx = x-cx[_indx:_indx+L]
     dy = y-cy[_indx:_indx+L]
     d2 = dx.pow(2) + dy.pow(2)
     indx = torch.argmin(d2) + _indx
 
-    return indx_
+    return indx
 
 
 
@@ -41,9 +42,10 @@ def search_(state,waypoints,_indx):
 def search_parallel(states,waypoints,_indx):
     xs,ys = states[:,0],states[:,1]
     cx,cy = waypoints[:,0],waypoints[:,1]
+    return 0
 
 
-def error_deviation_parallel_(states,refs,indices,ql,qc):
+def error_deviation_parallel_(states,refs,ql,qc):
     x,y = states[:,0],states[:,1]
     cx,cy,gx,gy = refs[:,0],refs[:,1],refs[:,2],refs[:,3]
     el = -gx*(x-cx) - gy*(y-cy)
@@ -88,3 +90,44 @@ class deviation_error(torch.autograd.Function):
         de_v = (mask@de_theta).view(-1)
    
         return de_s,de_v,None
+
+
+class deviation_error_(torch.autograd.Function):
+    
+    @staticmethod
+    def forward(ctx,states,vs,waypoints,start):
+        states = states.data.clone()
+        states.requires_grad = True
+        
+        _range = torch.arange(len(states)).view(-1,1)
+        range_ = _range.t()
+        mask = (_range<=range_).float()
+        
+        inds = (mask.t()@vs.view(-1,1)).view(-1).round().long()+start
+        #print(inds)
+        #print([vs[:i+1].sum().data+start for i in range(len(vs))])
+        dw = waypoints[inds+1]-waypoints[inds]
+        
+        refs = waypoints[inds].data.clone().requires_grad_()
+        with torch.enable_grad():
+            error = error_deviation_parallel_(states,refs,inds,ql,qc)
+            de_s,de_w = torch.autograd.grad(error,[states]+[refs],grad_outputs=None,retain_graph=False,create_graph=False)
+ 
+        ctx.save_for_backward(states.data.clone(),vs.data.clone(),waypoints,de_s.data.clone(),de_w.data.clone(),dw.data.clone())
+        #print(states.size(),vs.size(),waypoints.size(),de_s.size(),de_w.size(),dw.data.size())
+        
+        return error.data.clone()
+    
+    @staticmethod
+    def backward(ctx,de):
+        #print("################")
+        states,vs,waypoints,de_s,de_w,dw = ctx.saved_tensors
+         
+        de_theta = (de_w@dw.t()).diag().view(-1,1)
+        _range = torch.arange(len(states)).view(-1,1)
+        range_ = _range.t()
+        mask = (_range<=range_).float()
+        
+        de_v = (mask@de_theta).view(-1)
+        #print(de_v)
+        return de_s.data.clone(),de_v.data.clone(),None,None
