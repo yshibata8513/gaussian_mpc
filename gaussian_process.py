@@ -4,14 +4,7 @@ sigma = torch.Tensor([0.2])
 
 noise = 0.1
 
-class GP_test:
-    def __init__(self,dim):
-        self.dim = dim
-    
-    def forward(self,state,control):
-        myu = torch.zeros(self.dim)
-        sigma = torch.eye(self.dim)*noise
-    return myu,sigma
+
 
 def RBF_kernel(x,x_,dim):
     x = x.view(-1,1,dim)
@@ -64,14 +57,16 @@ class GaussianProcess:
             return myu_p
 
     
-    def predict(self,pred_x):
+    def forward(self,pred_x,requires_sigma=False):
         Kpp = self.kernel(pred_x,pred_x,self.dim_x)
         Kpn = self.kernel(pred_x,self.train_x,self.dim_x)
         Knp = Kpn.t()
         
-        myu_p = Kpn@self.G@self.train_y
-        sigma_p = Kpp - Kpn@self.G@Knp
-        
+        myu_p = (Kpn@self.G@self.train_y).view(-1)
+        sigma_p = None
+        if requires_sigma:
+            sigma_p = Kpp - Kpn@self.G@Knp
+            sigma_p = torch.eye(self.dim_y)*sigma_p        
         return myu_p,sigma_p
         
     
