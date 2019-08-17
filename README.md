@@ -31,6 +31,6 @@ See this paper for reference:
 不正確な物理モデル＋ガウス過程回帰によるMPC<br>
 ![gp](./incorrect_and_gp.gif)<br>
 
-Red points show Waypoints(赤：理想経路)<br>
-Green points show Predicted path(緑：MPCによる予測経路)<br>
-Blue points shows Actural Path(青：実際の経路)<br>
+Red points show Waypoints         赤：理想経路<br>
+Green points show Predicted path  緑：MPCによる予測経路<br>
+Blue points shows Actural Path    青：実際の経路<br>
