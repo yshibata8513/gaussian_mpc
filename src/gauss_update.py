@@ -9,6 +9,8 @@ dim_a = 2
 dim_z = dim_v + dim_a  #dimension of GP input 
 dim_s = dim_x + dim_v + dim_a
 
+dim_c = 2
+
 v2s = torch.cat([torch.zeros(dim_x,dim_v),torch.eye(dim_v),torch.zeros(dim_a,dim_v)],dim=0)
 s2v = v2s.t()
 z2s = torch.cat([torch.zeros(dim_x,dim_z),torch.eye(dim_z)],dim=0)
@@ -33,16 +35,27 @@ class gaussian_propagator:
         self.sigma_w = sigma_w 
 
     def initialize(self,state,control):
-        myu,sigma = self.gp_model(state,control,requires_sigma=True)
+        z = (s2z@state)
+        #state = torch.nn.Parameter( state ).view(-1)
+        control = control.data.clone().view(-1)
+        gp_indata = torch.cat([z,control],dim=0)
+     
+        myu,sigma = self.gp_model(gp_indata,requires_sigma=True)
+     
         return v2s@myu,v2s@sigma@s2v
 
-    def forward(self,state,control,_sigma,requires_sigma=False):
-        f = self.p_model(state,control)
-        g,_ = self.gp_model(state,control,requires_sigma=False)
+    def forward(self,state,control_dt,_sigma,requires_sigma=False):
+        control = control_dt[:dim_c]
+        z = (s2z@state)
+        #state = torch.nn.Parameter( state ).view(-1)
+        #control = control.data.clone().view(-1)
+        gp_indata = torch.cat([z,control],dim=0)
+        f = self.p_model(state,control_dt)
+        g,_ = self.gp_model(gp_indata,requires_sigma=False)
         myu = f + v2s@g
         sigma = None 
         if requires_sigma:
-            df = self.differentiate(state,control,type='p')
+            df = self.differentiate(state,control_dt,type='p')
             dg = self.differentiate(state,control,type='gp')
             dg = dg@s2z
             sigma = self.construct_sigma(df,dg,_sigma,sigma_w)
@@ -65,10 +78,11 @@ class gaussian_propagator:
         
     def differentiate(self,state,control,type):
         if type == 'gp':
-            state = (s2z@state).data.clone()
-            state = torch.nn.Parameter( state )
-            control = control.data.clone()
-            F,_ = self.gp_model(state,control,requires_sigma=False)
+            state = (s2z@state.data.clone())
+            state = torch.nn.Parameter( state ).view(-1)
+            control = control.data.clone().view(-1)
+            gp_indata = torch.cat([state,control],dim=0)
+            F,_ = self.gp_model(gp_indata,requires_sigma=False)
 
         elif type=='p':
             state = torch.nn.Parameter( state.data.clone() )
@@ -80,3 +94,4 @@ class gaussian_propagator:
                 dF  = torch.cat(dF_,dim=0)
 
         return dF.data.clone()
+

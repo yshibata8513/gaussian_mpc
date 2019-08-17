@@ -1,4 +1,12 @@
-import torch
+
+'''
+
+
+def construct_loss(path,refs,vs,variances):
+    mean_error = error_deviation_parallel_(path,refs,ql,qc)
+    var_error = ( variances*(path[:,:2]-refs[:,:2]).pow(2).sum(dim=1) ).sum()
+    return mean_error + cv*var_error
+
 
 def error_deviation_parallel(states,waypoints,indices,ql=1.,qc=1.):
     x,y = states[:,0],states[:,1]
@@ -25,17 +33,6 @@ def error_velocity(inds,ds,horizon_length):
 
 L = 100
 
-def search_(state,waypoints,_indx):
-    x,y = state[0],state[1]
-    cx,cy= waypoints[:,0],waypoints[:,1]
-    print(x.size(),cx.size(),y.size(),cy.size())
-    dx = x-cx[_indx:_indx+L]
-    dy = y-cy[_indx:_indx+L]
-    d2 = dx.pow(2) + dy.pow(2)
-    indx = torch.argmin(d2) + _indx
-
-    return indx
-
 
 
 
@@ -44,19 +41,8 @@ def search_parallel(states,waypoints,_indx):
     cx,cy = waypoints[:,0],waypoints[:,1]
     return 0
 
-
-def error_deviation_parallel_(states,refs,ql,qc):
-    x,y = states[:,0],states[:,1]
-    cx,cy,gx,gy = refs[:,0],refs[:,1],refs[:,2],refs[:,3]
-    el = -gx*(x-cx) - gy*(y-cy)
-    ec =  gy*(x-cx) - gx*(y-cy)
-    err = ql*el.pow(2).sum()+qc*ec.pow(2).sum()
-    return err
-    
-    
-
-ql=1
-qc=1
+ql=1.
+qc=1.
 
 class deviation_error(torch.autograd.Function):
     
@@ -120,7 +106,6 @@ class deviation_error_(torch.autograd.Function):
     
     @staticmethod
     def backward(ctx,de):
-        #print("################")
         states,vs,waypoints,de_s,de_w,dw = ctx.saved_tensors
          
         de_theta = (de_w@dw.t()).diag().view(-1,1)
@@ -131,3 +116,8 @@ class deviation_error_(torch.autograd.Function):
         de_v = (mask@de_theta).view(-1)
         #print(de_v)
         return de_s.data.clone(),de_v.data.clone(),None,None
+        
+        
+        
+        
+'''
