@@ -17,7 +17,7 @@ Procedure of creating model is as follow.
 3.不正確な物理モデル＋ガウス過程回帰を用いてモデル予測制御を構築。
 
 See this paper for reference:
-![Learning-based Model Predictive Control for Autonomous Racing](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/351561/08754713.pdf?sequence=1&isAllowed=y)
+[Learning-based Model Predictive Control for Autonomous Racing](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/351561/08754713.pdf?sequence=1&isAllowed=y)
 
 
 # Result
