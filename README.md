@@ -1,4 +1,4 @@
-# Learning-based Model Predictive Control with Gaussian Process
+# Learning-based Model Predictive Control with Gaussian Process(PyTorch)
 
 # Description
 This is simplified implementation of "Learning-based Model Predictive Control for Autonomous Racing" in which Gaussian-Processes are used to correct inaccurate physical models.
