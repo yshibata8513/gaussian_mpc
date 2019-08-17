@@ -21,6 +21,9 @@ See this paper for reference:
 
 
 # Result
+MPC with accurate model（正確な物理モデル）
 ![correct](./correct.gif)
+MPC with INaccurate model（不正確な物理モデル）
 ![incorrect](./incorrect.gif)
+MPC with INaccurate model and Gaussian-Process（不正確な物理モデル＋ガウス過程回帰）
 ![gp](./incorrect_and_gp.gif)
